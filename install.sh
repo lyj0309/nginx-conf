@@ -111,6 +111,23 @@ case $USE_DNS_API in
         ;;
 esac
 
+# Setup BBR
+if [ `cat /proc/sys/net/ipv4/tcp_congestion_control` != "bbr" ]; then
+    read -p "Do you want to enable BBR? (y/n): " USE_BBR
+    case $USE_BBR in
+        [yY] | [yY][eE][sS] )
+            echo "net.core.default_qdisc=fq" >> /etc/sysctl.conf
+            echo "net.ipv4.tcp_congestion_control=bbr" >> /etc/sysctl.conf
+            sysctl -p
+            ;;
+        [nN] | [nN][oO] )
+            ;;
+        * )
+            echo "Invalid input!"
+            exit 1
+            ;;
+    esac
+fi
 
 echo "Installing dependencies..."
 apt update
