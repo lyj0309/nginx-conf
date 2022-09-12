@@ -16,32 +16,38 @@
 # Usage:
 # Clone the *full* repository to your server and run this script.
 
+# Add colors
+echo_red(){ echo -e "\033[31m\033[01m$1\033[0m"; }
+echo_yellow(){ echo -e "\033[33m\033[01m$1\033[0m"; }
+echo_green(){ echo -e "\033[32m\033[01m$1\033[0m"; }
+reading(){ read -rp "$(green "$1")" "$2"; }
+
 # Check if running as root
 if [ `whoami` != "root" ]; then
-    echo "Root priviledge is required!"
+    echo_red "Root priviledge is required!"
     exit 1
 fi
 
 # Check if running on Debian-based system
 if [ ! -f "/etc/debian_version" ]; then
-    echo "This script works on Debian-based distros only! (PR welcome for more distros)"
+    echo_red "This script works on Debian-based distros only! (PR welcome for more distros)"
     exit 1
 fi
 
 # Input the domain name
-read -p "Enter your domain name (e.g. fastgit.org): " DOMAIN
+reading "Enter your domain name (e.g. fastgit.org): " DOMAIN
 
 # Ask if using DNS API
-read -p "Do you want to use DNS API to get a wildcard certificate? (y/n): " USE_DNS_API
+reading "Do you want to use DNS API to get a wildcard certificate? (y/n): " USE_DNS_API
 
 case $USE_DNS_API in 
     [yY] | [yY][eE][sS] )
         USE_DNS_API=y
         # Input the DNS provider name
-        read -p "Enter your DNS provider name (cloudflare, digitalocean, etc.): " DNS_PROVIDER
+        reading "Enter your DNS provider name (cloudflare, digitalocean, etc.): " DNS_PROVIDER
 
         # Input the DNS API key
-        read -p "Enter your DNS API key: " DNS_API_KEY
+        reading "Enter your DNS API key: " DNS_API_KEY
 
         # Install certbot and certbot-dns-$DNS_PROVIDER
         case $DNS_PROVIDER in
@@ -60,7 +66,7 @@ case $USE_DNS_API in
                 DNS_PROVIDER_PACKAGE="python3-certbot-dns-vultr"
                 ;;
             *)
-                echo "DNS provider not supported (PR welcome for more)!"
+                echo_red "DNS provider not supported (PR welcome for more)!"
                 exit 1
                 ;;
         esac
@@ -84,29 +90,29 @@ case $USE_DNS_API in
         USE_DNS_API=n
 
         # Ask for own certificate
-        echo "Please write your own certificate to /etc/letsencrypt/live/$DOMAIN/fullchain.pem and /etc/letsencrypt/live/$DOMAIN/privkey.pem"
-        read -p "Open the editor to write your certificate? (y/n): " OPEN_EDITOR
+        echo_yellow "Please write your own certificate to /etc/letsencrypt/live/$DOMAIN/fullchain.pem and /etc/letsencrypt/live/$DOMAIN/privkey.pem"
+        reading "Open the editor to write your certificate? (y/n): " OPEN_EDITOR
         case $OPEN_EDITOR in
             [yY] | [yY][eE][sS] )
                 editor /etc/letsencrypt/live/$DOMAIN/fullchain.pem
                 editor /etc/letsencrypt/live/$DOMAIN/privkey.pem
                 ;;
             [nN] | [nN][oO] )
-                echo "Please write your own certificate to /etc/letsencrypt/live/$DOMAIN/fullchain.pem and /etc/letsencrypt/live/$DOMAIN/privkey.pem"
-                read -p "When you are done, press any key to continue..."
+                echo_yellow "Please write your own certificate to /etc/letsencrypt/live/$DOMAIN/fullchain.pem and /etc/letsencrypt/live/$DOMAIN/privkey.pem"
+                reading "When you are done, press any key to continue..."
                 if [ ! -f "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" ] || [ ! -f "/etc/letsencrypt/live/$DOMAIN/privkey.pem" ]; then
-                    echo "Certificate not found! Fuck off!"
+                    echo_red "Certificate not found! Fuck off!"
                     exit 1
                 fi
                 ;;
             *)
-                echo "Invalid input!"
+                echo_red "Invalid input!"
                 exit 1
                 ;;
         esac
         ;;
     * )
-        echo "Invalid input!"
+        echo_red "Invalid input!"
         exit 1
         ;;
 esac
@@ -129,7 +135,7 @@ if [ `cat /proc/sys/net/ipv4/tcp_congestion_control` != "bbr" ]; then
     esac
 fi
 
-echo "Installing dependencies..."
+echo_yellow "Installing dependencies..."
 apt update
 case $USE_DNS_API in
     y )
@@ -142,7 +148,7 @@ esac
 
 case $USE_DNS_API in
     y )
-        echo "Getting certificate..."
+        echo_yellow "Getting certificate..."
         certbot certonly --dns-$DNS_PROVIDER --dns-$DNS_PROVIDER-credentials /etc/letsencrypt/$DNS_PROVIDER.ini --dns-$DNS_PROVIDER-propagation-seconds 60 \
             -d *.$DOMAIN -d $DOMAIN --agree-tos --register-unsafely-without-email
         ;;
@@ -151,7 +157,7 @@ case $USE_DNS_API in
 esac
 
 if [ ! -f /etc/letsencrypt/ssl-dhparams.pem ]; then
-    echo "Installing dhparam from Mozilla..."
+    echo_yellow "Installing dhparam from Mozilla..."
     curl -q https://ssl-config.mozilla.org/ffdhe2048.txt > /etc/letsencrypt/ssl-dhparams.pem
 fi
 
@@ -160,7 +166,7 @@ sed -i "s/fastgit.org/$DOMAIN/g" *.conf
 for file in *.fastgit.org.conf; do
     mv "$file" "${file//fastgit.org/$DOMAIN}"
 done
-echo "Installing nginx configurations..."
+echo_yellow "Installing nginx configurations..."
 if [ -f "/etc/nginx/sites-enabled/default" ]; then
     rm /etc/nginx/sites-enabled/default /etc/nginx/sites-available/default
 fi
@@ -171,7 +177,7 @@ done
 cp anti-floc.conf /etc/nginx/snippets/
 
 # Download the latest FastGit
-echo "Downloading FastGit..."
+echo_yellow "Downloading FastGit..."
 git clone --depth=1 https://github.com/FastGitORG/www /var/www/fastgit
 rm -rf /var/www/fastgit/.git* /var/www/fastgit/README /var/www/fastgit/LICENSE
 
@@ -179,4 +185,4 @@ nginx -t
 systemctl enable --now nginx
 systemctl restart nginx
 
-echo "Enjoy! :D"
+echo_yellow "Enjoy! :D"
