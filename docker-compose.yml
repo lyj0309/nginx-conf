@@ -1,0 +1,12 @@
+version: '3'
+services:
+    nginx:
+      restart: always
+      container_name: nginx
+      image: nginx
+      ports:
+      - 80:80
+      - 443:443
+      volumes:
+      #- /usr/local/nginx/nginx.conf/:/etc/nginx/nginx.conf #不能挂载，不知道为什么，必须手动拷贝配置文件才行
+      - /var/www/cert/:/var/www/cert/
