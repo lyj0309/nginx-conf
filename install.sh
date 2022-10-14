@@ -59,15 +59,15 @@ echo_yellow "Installing dependencies..."
 apt update
 
     echo_yellow "Installing dhparam from Mozilla..."
-    curl https://ssl-config.mozilla.org/ffdhe2048.txt >> ./ssl-dhparams.pem
+    wget https://ssl-config.mozilla.org/ffdhe2048.txt 
     docker exec -d nginx  mkdir -p /var/lib/nginx
-    docker cp ./ssl-dhparams.pem nginx:/var/lib/nginx/dhparam.pem
-    rm dhparam.pem
+    docker cp ./ffdhe2048.txt nginx:/var/lib/nginx/dhparam.pem
+    rm ffdhe2048.txt
 
 
 # Proceed the configuration files
 sed -i "s/fastgit.org/$DOMAIN/g" *.conf
-for file in *.fastgit.org.conf; do
+for file in *fastgit.org.conf; do
     mv "$file" "${file//fastgit.org/$DOMAIN}"
 done
 
@@ -78,8 +78,7 @@ done
 echo_yellow "Installing nginx configurations..."
 
 docker exec -d nginx  mkdir -p /etc/nginx/snippets
+docker exec -d nginx  mkdir -p /www/wwwlogs/
 docker cp anti-floc.conf nginx:/etc/nginx/snippets/
 
 echo_yellow "Enjoy! :D"
-
-docker-compose up -d
