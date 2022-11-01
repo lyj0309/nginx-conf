@@ -64,21 +64,15 @@ apt update
     docker cp ./ffdhe2048.txt nginx:/var/lib/nginx/dhparam.pem
     rm ffdhe2048.txt
 
+echo_yellow "Installing nginx configurations..."
 
 # Proceed the configuration files
-sed -i "s/fastgit.org/$DOMAIN/g" *.conf
+sed -i "s/fastgit.org/$DOMAIN/g" ./conf.d/*.conf
 for file in *fastgit.org.conf; do
     mv "$file" "${file//fastgit.org/$DOMAIN}"
 done
 
-for file in *$DOMAIN.conf; do
-    docker cp $file nginx:/etc/nginx/conf.d/
-done
 
-echo_yellow "Installing nginx configurations..."
-
-docker exec -d nginx  mkdir -p /etc/nginx/snippets
-docker exec -d nginx  mkdir -p /www/wwwlogs/
-docker cp anti-floc.conf nginx:/etc/nginx/snippets/
+docker-compose up
 
 echo_yellow "Enjoy! :D"
