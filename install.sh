@@ -58,11 +58,10 @@ fi
 echo_yellow "Installing dependencies..."
 apt update
 
-    echo_yellow "Installing dhparam from Mozilla..."
-    wget https://ssl-config.mozilla.org/ffdhe2048.txt 
-    docker exec -d nginx  mkdir -p /var/lib/nginx
-    docker cp ./ffdhe2048.txt nginx:/var/lib/nginx/dhparam.pem
-    rm ffdhe2048.txt
+echo_yellow "Installing dhparam from Mozilla..."
+wget https://ssl-config.mozilla.org/ffdhe2048.txt
+mv ffdhe2048.txt ./cert/dhparam.pem
+rm ffdhe2048.txt
 
 echo_yellow "Installing nginx configurations..."
 
